@@ -1,0 +1,106 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using System.Web.Script.Serialization;
+
+namespace RPA_Logger
+{
+    public class VZ_Logger
+    {
+        
+        public string LogLine(string timeStamp, string Serial, string hostName, string Segment, string Group, string UCNumber, string taskName, 
+            string subTaskName, string Mode, string Level, string Line, string logMessage, string levelTrigger, string logFileLoc)
+        {
+            string returnMessage = string.Empty;
+            try
+            {
+                int iLevel = int.Parse(Level);
+                int iLevelTrigger = int.Parse(levelTrigger);
+
+
+                if (iLevelTrigger == 0)
+                {
+                    returnMessage= "Successful:Zero Level Logging, Log Out of Scope";
+                }
+                if (iLevel <= iLevelTrigger)
+                {
+                    logInfo li = new logInfo();
+                    li.timeStamp = timeStamp;
+                    li.Serial = Serial;
+                    li.hostName = hostName;
+                    li.Segment = Segment;
+                    li.Group = Group;
+                    li.UCNumber = UCNumber;
+                    li.taskName = taskName;
+                    li.subTaskName = subTaskName;
+                    li.Mode = Mode;
+                    li.Level = Level;
+                    li.Line = Line;
+                    li.logMessage = logMessage;
+                    li.levelTrigger = levelTrigger;
+                    string logLine = new JavaScriptSerializer().Serialize(li);
+
+
+                    if (!File.Exists(logFileLoc))
+                    {
+                        logLine = "[" + logLine + "]";
+                        using (StreamWriter sw = File.CreateText(logFileLoc))
+                        {
+                            sw.WriteLine(logLine);
+                            returnMessage = "Successful: File Created and Log Filed.";
+                        }
+                    }
+                    else
+                    {
+                        string text = File.ReadAllText(logFileLoc);
+                        if (text.Contains("]"))
+                        {
+                            text = text.Replace("]", "");
+                            File.WriteAllText(logFileLoc, text);
+                            logLine = "," + logLine + "]";
+                        }
+                        else
+                        {
+                            File.WriteAllText(logFileLoc, text);
+                            logLine = "[" + logLine + "]";
+                        }
+
+
+                        using (StreamWriter sw = File.AppendText(logFileLoc))
+                        {
+
+                            sw.WriteLine(logLine);
+                            returnMessage = "Successful: Log Filed.";
+                        }
+                    }
+
+                }
+                return returnMessage;
+            }
+            catch (Exception e)
+            {
+                return "Fail: Failed to process log. " + e.ToString();
+            }
+        }           
+        
+    }
+    class logInfo
+    {
+      public  string timeStamp;
+        public string Serial;
+        public string hostName;
+        public string Segment;
+        public string Group; 
+        public string UCNumber;
+        public string taskName;
+        public string subTaskName;
+        public string Mode;
+        public string Level;
+        public string Line;
+        public string logMessage;
+        public string levelTrigger;
+    }
+}
